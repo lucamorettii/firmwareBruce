@@ -5,6 +5,7 @@
 #include "modules/rfid/PN532KillerTools.h"
 #include "modules/rfid/amiibo.h"
 #include "modules/rfid/chameleon.h"
+#include "modules/rfid/mikai.h"
 #include "modules/rfid/pn532ble.h"
 #include "modules/rfid/rfid125.h"
 #include "modules/rfid/srix_tool.h" //added for srix Tool
@@ -57,6 +58,7 @@ void RFIDMenu::optionsMenu() {
     if (bruceConfigPins.rfidModule == PN532_I2C_MODULE) {
         // Added SRIX Menu only if PN is set to i2c mode
         options.insert(options.begin() + 3, {"SRIX Tool", [=]() { PN532_SRIX(); }});
+        options.insert(options.begin() + 4, {"mikai", [=]() { Mikai(); }});
     }
 #endif
 #endif
