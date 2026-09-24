@@ -1,7 +1,10 @@
 - Funzioni Mikai
-  - Add cent
-  - Set cent
+  - Rea (aggiungere possibilità di uscita in lettura)
+  - Add cent (aggiungere possibilità di uscita in lettura e scrittura)
+  - Set cent (aggiungere possibilità di uscita in lettura e scrittura)
+  - Reset (aggiungere possibilità di uscita in lettura e scrittura, fare test)
   - Import vendor
   - Export vendor
 - Funzioni Microel
   - Tutto
+- Aggiungere gestori

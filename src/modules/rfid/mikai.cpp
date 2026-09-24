@@ -221,8 +221,15 @@ void Mikai::set_credit_tag() {
 
     uint8_t day = 15, month = 7, year = 26;
     String value = num_keyboard("", 5, "Credit in cents:");
+    if (value == "\x1B") { // User pressed ESC
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+    display_banner();
+    padprintln("Updating Mikai tag...");
+    padprintln("");
     long cents = value.toInt();
-    if (value.isEmpty() || cents < 5 || cents > 50000) {
+    if (value.isEmpty() || cents < 5 || cents > 5000) {
         displayError("Invalid credit!", true);
         set_state(SET_CREDIT_MODE);
         return;
@@ -268,8 +275,15 @@ void Mikai::add_credit_tag() {
 
     uint8_t day = 15, month = 7, year = 26;
     String value = num_keyboard("", 5, "Add cents:");
+    if (value == "\x1B") { // User pressed ESC
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+    display_banner();
+    padprintln("Updating Mikai tag...");
+    padprintln("");
     long cents = value.toInt();
-    if (value.isEmpty() || cents < 5 || cents > 50000) {
+    if (value.isEmpty() || cents < 5 || cents > 5000) {
         displayError("Invalid credit!", true);
         set_state(ADD_CREDIT_MODE);
         return;
