@@ -1,9 +1,9 @@
 /**
  * @file PN532.cpp
- * @author Rennan Cockles (https://github.com/rennancockles) // Dawi (https://github.com/yourdawi)
+ * @author Luca Moretti
  * @brief Read, Write and Emulate RFID tags using PN532 module
- * @version 0.2
- * @date 2026-02-22
+ * @version 0.3
+ * @date 2026-09-24
  */
 
 #include "PN532.h"
@@ -405,7 +405,7 @@ int PN532::read(int cardBaudRate) {
         format_data_felica(idm, pmm, sys_code_res);
     }
 
-    displayInfo("Reading data blocks...");
+    // displayInfo("Reading data blocks...");
     pageReadStatus = read_data_blocks();
     pageReadSuccess = pageReadStatus == SUCCESS;
     return SUCCESS;
@@ -511,8 +511,8 @@ int PN532::emulate() {
             emulatedNdefMessage = rawNdefRecord;
         } else {
             bool canParseUltralightDump = (uid.sak == PICC_TYPE_MIFARE_UL);
-            if ((!canParseUltralightDump ||
-                 !extractNdefMessageFromPageDump(strAllPages, emulatedNdefMessage))) {
+            if ((!canParseUltralightDump || !extractNdefMessageFromPageDump(strAllPages, emulatedNdefMessage)
+                )) {
                 if (!buildNdefMessageFromStruct(this->ndefMessage, emulatedNdefMessage)) {
                     std::vector<uint8_t> uriPayload = Ndef::urlNdefAbbrv("https://bruce.computer");
                     emulatedNdefMessage = Ndef::newMessage(uriPayload);
@@ -762,10 +762,9 @@ int PN532::emulate() {
             if (p1 == ApduCommand::C_APDU_P1_SELECT_BY_ID) {
                 if (p2 != 0x0C) {
                     response = kSwOk;
-                } else if (
-                    lc == 2 && apdu.size() >= 7 && apdu[ApduCommand::C_APDU_DATA] == 0xE1 &&
-                    (apdu[ApduCommand::C_APDU_DATA + 1] == 0x03 || apdu[ApduCommand::C_APDU_DATA + 1] == 0x04)
-                ) {
+                } else if (lc == 2 && apdu.size() >= 7 && apdu[ApduCommand::C_APDU_DATA] == 0xE1 &&
+                           (apdu[ApduCommand::C_APDU_DATA + 1] == 0x03 ||
+                            apdu[ApduCommand::C_APDU_DATA + 1] == 0x04)) {
                     currentFile = (apdu[ApduCommand::C_APDU_DATA + 1] == 0x03) ? TagFile::CC : TagFile::NDEF;
                     response = kSwOk;
                 } else {
@@ -1281,8 +1280,7 @@ int PN532::read_felica_data() {
     for (uint16_t i = 0x8000; i < 0x8000 + totalPages; i++) {
         uint16_t block_list[1] = {i}; // Read the block i
         uint8_t block_data[1][16] = {0};
-        uint16_t default_service_code[1] = {
-            0x000B
+        uint16_t default_service_code[1] = {0x000B
         }; // Default service code for reading. Should works for every card
         int res = nfc.felica_ReadWithoutEncryption(1, default_service_code, 1, block_list, block_data);
 
@@ -1391,11 +1389,10 @@ int PN532::write_felica_data_block(int block, String data) {
         block_data[0][i / 2] = strtoul(data.substring(i, i + 2).c_str(), NULL, 16);
     }
 
-    uint16_t block_list[1] = {(uint16_t)(block +
-                                         0x8000)}; // Write the block i. Block in FeliCa start from 0x8000
+    uint16_t block_list[1] = {(uint16_t)(block + 0x8000)
+    }; // Write the block i. Block in FeliCa start from 0x8000
 
-    uint16_t default_service_code[1] = {
-        0x0009
+    uint16_t default_service_code[1] = {0x0009
     }; // Default service code for writing. Should works for every card
 
     return nfc.felica_WriteWithoutEncryption(1, default_service_code, block, block_list, block_data);

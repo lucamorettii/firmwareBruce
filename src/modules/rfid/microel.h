@@ -1,31 +1,31 @@
 /**
- * @file mikai.h
+ * @file microel.h
  * @author Luca Moretti
  * @brief
  * @version 0.1
  * @date 2026-09-24
  */
 
-#ifndef __MIKAI_H__
-#define __MIKAI_H__
+#ifndef __MICROEL_H__
+#define __MICROEL_H__
 
-#include "pn532_srix.h"
+#include "PN532.h"
 #include <Arduino.h>
 
-class Mikai {
+class Microel {
 public:
-    enum SRIX_State { IDLE_MODE, READ_TAG_MODE };
+    enum Microel_State { IDLE_MODE, READ_TAG_MODE };
 
-    Mikai();
-    ~Mikai();
+    Microel();
+    ~Microel();
 
     void setup();
     void loop();
 
 private:
-    Arduino_PN532_SRIX *nfc = nullptr;
+    PN532 *nfc = nullptr;
 
-    SRIX_State current_state;
+    Microel_State current_state;
     bool _screen_drawn = false;
 
     // RAM storage for 128 blocks (512 bytes)
@@ -33,11 +33,11 @@ private:
 
     void display_banner();
     void select_state();
-    void set_state(SRIX_State state);
+    void set_state(Microel_State state);
     void read_tag();
     void show_main_menu();
 };
 
-void startMikai();
+void startMicroel();
 
 #endif
