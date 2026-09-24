@@ -38,8 +38,6 @@ void Microel::setup() {
     }
 
     padprintln("PN532 ready for MIFARE.");
-    displaySuccess("PN532 MIFARE ready!");
-    delay(1000);
 
     set_state(IDLE_MODE);
     return loop();

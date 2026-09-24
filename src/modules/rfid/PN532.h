@@ -2,10 +2,9 @@
  * @file PN532.h
  * @author Luca Moretti
  * @brief Read, Write and Emulate RFID tags using PN532 module
- * @version 0.1
+ * @version 0.2
  * @date 2026-09-24
  */
-
 #ifndef BRUCE_PN532_H
 #define BRUCE_PN532_H
 

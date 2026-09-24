@@ -5,7 +5,6 @@
  * @version 0.3
  * @date 2026-09-24
  */
-
 #include "PN532.h"
 #include "apdu.h"
 #include "core/bus_HAL.h"

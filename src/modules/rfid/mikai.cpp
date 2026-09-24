@@ -73,8 +73,6 @@ void Mikai::setup() {
         padprintln("FW: " + String(fw_major) + "." + String(fw_minor));
     }
     delay(1000);
-    displaySuccess("PN532-SRIX ready!");
-    delay(1000);
 
     set_state(IDLE_MODE);
     return loop();
@@ -92,6 +90,11 @@ void Mikai::loop() {
         switch (current_state) {
             case IDLE_MODE: show_main_menu(); break;
             case READ_TAG_MODE: read_tag(); break;
+            case SET_CREDIT_MODE: set_credit_tag(); break;
+            case ADD_CREDIT_MODE: add_credit_tag(); break;
+            case RESET_MODE: reset_tag(); break;
+            case IMPORT_VENDOR_MODE: import_vendor_tag(); break;
+            case EXPORT_VENDOR_MODE: export_vendor_tag(); break;
         }
     }
 }
@@ -101,6 +104,11 @@ void Mikai::select_state() {
 
     options.emplace_back("Main Menu", [this]() { set_state(IDLE_MODE); });
     options.emplace_back("Read tag", [this]() { set_state(READ_TAG_MODE); });
+    options.emplace_back("Set credit", [this]() { set_state(SET_CREDIT_MODE); });
+    options.emplace_back("Add credit", [this]() { set_state(ADD_CREDIT_MODE); });
+    options.emplace_back("Reset tag", [this]() { set_state(RESET_MODE); });
+    options.emplace_back("Import vendor tag", [this]() { set_state(IMPORT_VENDOR_MODE); });
+    options.emplace_back("Export vendor tag", [this]() { set_state(EXPORT_VENDOR_MODE); });
 
     loopOptions(options);
 }
@@ -117,6 +125,11 @@ void Mikai::display_banner() {
 
     switch (current_state) {
         case READ_TAG_MODE: printSubtitle("READ TAG MODE"); break;
+        case SET_CREDIT_MODE: printSubtitle("SET CREDIT MODE"); break;
+        case ADD_CREDIT_MODE: printSubtitle("ADD CREDIT MODE"); break;
+        case RESET_MODE: printSubtitle("RESET MODE"); break;
+        case IMPORT_VENDOR_MODE: printSubtitle("IMPORT VENDOR MODE"); break;
+        case EXPORT_VENDOR_MODE: printSubtitle("EXPORT VENDOR MODE"); break;
         case IDLE_MODE: printSubtitle("MAIN MENU"); break;
     }
 
@@ -136,8 +149,12 @@ void Mikai::show_main_menu() {
     padprintln("Mikai version: 0.1");
     padprintln("");
     padprintln("Features:");
-    padprintln("- Read info Mikai tag");
-    padprintln("");
+    padprintln("- Read Mikai tag");
+    padprintln("- Set credit on Mikai tag");
+    padprintln("- Add credit to Mikai tag");
+    padprintln("- Reset Mikai tag");
+    padprintln("- Import vendor data from Mikai tag");
+    padprintln("- Export vendor data from Mikai tag");
 
     tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);
     padprintln("Press [OK] to open menu");
@@ -181,5 +198,141 @@ void Mikai::read_tag() {
 
     _screen_drawn = true;
 }
+
+void Mikai::set_credit_tag() {
+
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Mikai tag on the reader.");
+    padprintln("");
+
+    if (!mikai_read_tag(&srixKey, nfc)) {
+        displayError("Mikai tag read failed!");
+        delay(2000);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
+
+    uint8_t day = 15, month = 7, year = 26;
+    String value = num_keyboard("", 5, "Credit in cents:");
+    long cents = value.toInt();
+    if (value.isEmpty() || cents < 5 || cents > 50000) {
+        displayError("Invalid credit!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    int result = mikai_set_cents(&srixKey, (uint16_t)cents, day, month, year);
+    if (result < 0 || !mikai_has_pending_writes(&srixKey)) {
+        displayError("Impossible to set credit!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        displayError("Tag write failed!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    displaySuccess("Credit set successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
+
+void Mikai::add_credit_tag() {
+
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Mikai tag on the reader.");
+    padprintln("");
+
+    if (!mikai_read_tag(&srixKey, nfc)) {
+        displayError("Mikai tag read failed!");
+        delay(2000);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
+
+    uint8_t day = 15, month = 7, year = 26;
+    String value = num_keyboard("", 5, "Add cents:");
+    long cents = value.toInt();
+    if (value.isEmpty() || cents < 5 || cents > 50000) {
+        displayError("Invalid credit!", true);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    int result = mikai_add_cents(&srixKey, (uint16_t)cents, day, month, year);
+    if (result < 0 || !mikai_has_pending_writes(&srixKey)) {
+        displayError("Unable to add credit!", true);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        displayError("Tag write failed!", true);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    displaySuccess("Additional credit added!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
+
+void Mikai::reset_tag() {
+
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Mikai tag on the reader.");
+    padprintln("");
+
+    if (!mikai_read_tag(&srixKey, nfc)) {
+        displayError("Mikai tag read failed!");
+        delay(2000);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
+
+    mikai_reset_key(&srixKey);
+    if (!mikai_has_pending_writes(&srixKey)) {
+        displayError("No changes to write!", true);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        displayError("Reset write failed!", true);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    displaySuccess("Tag reset successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
+
+void Mikai::import_vendor_tag() {}
+
+void Mikai::export_vendor_tag() {}
 
 void startMikai() { Mikai mikai_tool; }

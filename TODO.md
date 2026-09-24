@@ -1,0 +1,7 @@
+- Funzioni Mikai
+  - Add cent
+  - Set cent
+  - Import vendor
+  - Export vendor
+- Funzioni Microel
+  - Tutto

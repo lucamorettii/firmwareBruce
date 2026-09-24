@@ -14,7 +14,15 @@
 
 class Mikai {
 public:
-    enum SRIX_State { IDLE_MODE, READ_TAG_MODE };
+    enum SRIX_State {
+        IDLE_MODE,
+        READ_TAG_MODE,
+        SET_CREDIT_MODE,
+        ADD_CREDIT_MODE,
+        RESET_MODE,
+        IMPORT_VENDOR_MODE,
+        EXPORT_VENDOR_MODE
+    };
 
     Mikai();
     ~Mikai();
@@ -35,6 +43,11 @@ private:
     void select_state();
     void set_state(SRIX_State state);
     void read_tag();
+    void set_credit_tag();
+    void add_credit_tag();
+    void reset_tag();
+    void import_vendor_tag();
+    void export_vendor_tag();
     void show_main_menu();
 };
 
