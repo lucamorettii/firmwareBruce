@@ -34,6 +34,7 @@ private:
     void read_tag();
     void set_credit_tag();
     void add_credit_tag();
+    void calculate_keys_tag();
     void show_main_menu();
 };
 

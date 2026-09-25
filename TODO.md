@@ -1,12 +1,10 @@
 - Funzioni Mikai
-  - Rea (aggiungere possibilità di uscita in lettura)
   - Add cent (aggiungere possibilità di uscita in lettura e scrittura)
   - Set cent (aggiungere possibilità di uscita in lettura e scrittura)
   - Reset (aggiungere possibilità di uscita in lettura e scrittura, fare test)
   - Import vendor
   - Export vendor
 - Funzioni Microel
-  - Tempo di stampa che il PN532 viene inizializato
-  - Read. Set, Add, Calcolo chiavi
+  - Set, Add
+  - Calcolo chiavi (bug nella funzione)
 - Aggiungere gestori (YBB, stoBene, Aqvagold)
-- Verificare gli import dei file in rfidDue

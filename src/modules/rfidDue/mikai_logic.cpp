@@ -6,6 +6,7 @@
  * @date 2026-09-25
  */
 #include "mikai_logic.h"
+#include "core/mykeyboard.h"
 
 Arduino_PN532_SRIX nfcSrix(255, 255);
 struct srix_t srix;
@@ -14,31 +15,43 @@ struct mykey_t srixKey = {&srix, 0};
 static bool nfc_wait_and_select(Arduino_PN532_SRIX *nfc) {
     if (!nfc->SRIX_init()) return false;
     for (int attempt = 0; attempt < 60; attempt++) {
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return false;
+        }
         if (nfc->SRIX_initiate_select()) return true;
         delay(100);
     }
     return false;
 }
 
-static void nfc_reselect(Arduino_PN532_SRIX *nfc) {
+static bool nfc_reselect(Arduino_PN532_SRIX *nfc) {
     nfc->SRIX_init();
     for (int i = 0; i < 60; i++) {
-        if (nfc->SRIX_initiate_select()) return;
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return false;
+        }
+        if (nfc->SRIX_initiate_select()) return true;
         delay(100);
     }
+    return false;
 }
 
-static void read_block(Arduino_PN532_SRIX *nfc, uint8_t rx[4], uint8_t blockNum) {
-    while (!nfc->SRIX_read_block(blockNum, rx)) { nfc_reselect(nfc); }
+static bool read_block(Arduino_PN532_SRIX *nfc, uint8_t rx[4], uint8_t blockNum) {
+    while (!nfc->SRIX_read_block(blockNum, rx)) {
+        if (!nfc_reselect(nfc)) return false;
+    }
+    return true;
 }
 
 static void write_block(Arduino_PN532_SRIX *nfc, struct srix_t *target, uint8_t blockNum) {
     while (true) {
         nfc->SRIX_write_block(blockNum, target->eeprom[blockNum]);
         uint8_t check[4];
-        read_block(nfc, check, blockNum);
+        if (!read_block(nfc, check, blockNum)) return;
         if (memcmp(target->eeprom[blockNum], check, 4) == 0) return;
-        nfc_reselect(nfc);
+        if (!nfc_reselect(nfc)) return;
     }
 }
 
@@ -122,7 +135,9 @@ bool mikai_read_tag(struct mykey_t *key, Arduino_PN532_SRIX *nfc) {
                        ((uint64_t)uid_bytes[3] << 24) | ((uint64_t)uid_bytes[2] << 16) |
                        ((uint64_t)uid_bytes[1] << 8) | (uint64_t)uid_bytes[0];
 
-    for (uint8_t i = 0; i < SRIX4K_BLOCKS; i++) read_block(nfc, key->srix4k->eeprom[i], i);
+    for (uint8_t i = 0; i < SRIX4K_BLOCKS; i++) {
+        if (!read_block(nfc, key->srix4k->eeprom[i], i)) return false;
+    }
 
     calculateEncryptionKey(key);
     return true;

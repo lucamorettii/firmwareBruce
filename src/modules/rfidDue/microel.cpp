@@ -10,10 +10,7 @@
 #include "core/display.h"
 #include "core/mykeyboard.h"
 #include "core/settings.h"
-#include "core/type_convertion.h"
 #include "microel_logic.h"
-#include <cstring>
-#include <vector>
 
 Microel::Microel() {
     current_state = IDLE_MODE;
@@ -40,6 +37,7 @@ void Microel::setup() {
 
     padprintln("PN532 ready for MIFARE.");
 
+    delay(1000);
     set_state(IDLE_MODE);
     return loop();
 }
@@ -58,6 +56,7 @@ void Microel::loop() {
             case READ_TAG_MODE: read_tag(); break;
             case SET_CREDIT_MODE: set_credit_tag(); break;
             case ADD_CREDIT_MODE: add_credit_tag(); break;
+            case CALCULATE_KEYS_MODE: calculate_keys_tag(); break;
         }
     }
 }
@@ -161,5 +160,41 @@ void Microel::read_tag() {
 void Microel::set_credit_tag() {}
 
 void Microel::add_credit_tag() {}
+
+void Microel::calculate_keys_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Microel tag on the reader.");
+    padprintln("");
+
+    if (!microel_read_tag(settore, nfc)) {
+        displayError("Microel tag read failed!");
+        delay(2000);
+        set_state(READ_TAG_MODE);
+        return;
+    }
+
+    tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
+
+    String info = microel_get_keys_string(settore);
+    int inizio = 0;
+    while (inizio < info.length()) {
+        int fine = info.indexOf('\n', inizio);
+        if (fine < 0) fine = info.length();
+        padprintln(info.substring(inizio, fine));
+        inizio = fine + 1;
+    }
+    padprintln("");
+
+    tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);
+    padprintln("Press [OK] for Main Menu");
+    tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
+
+    _screen_drawn = true;
+}
 
 void startMicroel() { Microel microel_tool; }

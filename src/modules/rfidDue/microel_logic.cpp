@@ -138,3 +138,32 @@ String microel_get_info_string(Blocco *settore) {
            "\nCredito precedente: " + String(settore[1].credito / 100) + "." +
            (settore[1].credito % 100 < 10 ? "0" : "") + String(settore[1].credito % 100) + " euro";
 }
+
+String microel_get_keys_string(Blocco *settore) {
+    if (settore == nullptr) return "No data available";
+
+    String uidString;
+    for (uint8_t i = 0; i < uidLength; ++i) {
+        if (uid[i] < 0x10) uidString += "0";
+        uidString += String(uid[i], HEX);
+        if (i + 1 < uidLength) uidString += " ";
+    }
+    uidString.toUpperCase();
+
+    String keyAString;
+    String keyBString;
+    for (uint8_t i = 0; i < 6; ++i) {
+        if (chiaveA[i] < 0x10) keyAString += "0";
+        keyAString += String(chiaveA[i], HEX);
+        if (i + 1 < 6) keyAString += " ";
+
+        if (chiaveB[i] < 0x10) keyBString += "0";
+        keyBString += String(chiaveB[i], HEX);
+        if (i + 1 < 6) keyBString += " ";
+    }
+    keyAString.toUpperCase();
+    keyBString.toUpperCase();
+
+    return "UID (" + String(uidLength) + " byte): " + uidString + "\nKey A: " + keyAString +
+           "\nKey B: " + keyBString;
+}

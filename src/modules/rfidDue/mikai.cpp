@@ -12,7 +12,6 @@
 #include "core/settings.h"
 #include "mikai_logic.h"
 #include <cstring>
-#include <vector>
 
 Mikai::Mikai() {
     current_state = IDLE_MODE;
@@ -86,6 +85,7 @@ void Mikai::loop() {
         }
 
         if (check(SelPress)) { select_state(); }
+        if (returnToMenu) break;
 
         switch (current_state) {
             case IDLE_MODE: show_main_menu(); break;
@@ -175,6 +175,7 @@ void Mikai::read_tag() {
     padprintln("");
 
     if (!mikai_read_tag(&srixKey, nfc)) {
+        if (returnToMenu) return;
         displayError("Mikai tag read failed!");
         delay(2000);
         set_state(READ_TAG_MODE);
