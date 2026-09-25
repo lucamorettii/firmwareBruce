@@ -1,65 +1,20 @@
-#include "RFIDMenu.h"
+#include "RFIDMenuDue.h"
 #include "core/display.h"
 #include "core/settings.h"
 #include "core/utils.h"
-#include "modules/rfid/PN532KillerTools.h"
-#include "modules/rfid/amiibo.h"
-#include "modules/rfid/chameleon.h"
-#include "modules/rfid/pn532ble.h"
-#include "modules/rfid/rfid125.h"
-#include "modules/rfid/srix_tool.h" //added for srix Tool
-#include "modules/rfid/tag_o_matic.h"
+#include "modules/rfidDue/microel.h"
+#include "modules/rfidDue/mikai.h"
 
-#ifndef LITE_VERSION
-#include "modules/rfid/emv_reader.hpp"
-#endif
-void RFIDMenu::optionsMenu() {
+void RFIDMenuDue::optionsMenu() {
     options = {
-#if !defined(REMOVE_RFID_HW_INTERFACE)  // Remove Hardware interface menu due to lack of external GPIO
-        {"Read tag",    [=]() { TagOMatic(); }                     },
+#if !defined(REMOVE_RFID_HW_INTERFACE)
 #ifndef LITE_VERSION
-        {"Read EMV",    [=]() { EMVReader(); }                     },
-        {"Read 125kHz", [=]() { RFID125(); }                       },
+        {"Mikai",   [=]() { startMikai(); }  },
+        {"Microel", [=]() { startMicroel(); }},
+        {"Config",  [=]() { configMenu(); }  },
 #endif
-        {"Scan tags",   [=]() { TagOMatic(TagOMatic::SCAN_MODE); } },
-        {"Load file",   [=]() { TagOMatic(TagOMatic::LOAD_MODE); } },
-        {"Erase data",  [=]() { TagOMatic(TagOMatic::ERASE_MODE); }},
 #endif
     };
-
-#if !defined(REMOVE_RFID_HW_INTERFACE)
-    // Emulate NDEF (arm the radio directly with a built NDEF message) only
-    // makes sense on modules that can act as a target/card emulator.
-    bool ndefEmulationSupported = bruceConfigPins.rfidModule == PN532_I2C_MODULE ||
-                                  bruceConfigPins.rfidModule == PN532_SPI_MODULE ||
-                                  bruceConfigPins.rfidModule == PN532_I2C_SPI_MODULE ||
-                                  bruceConfigPins.rfidModule == ST25R3916_SPI_MODULE ||
-                                  bruceConfigPins.rfidModule == ST25R3916_I2C_MODULE || false;
-    if (ndefEmulationSupported) {
-        options.push_back({"Emulate NDEF", [=]() { TagOMatic(TagOMatic::EMULATE_NDEF_MODE); }});
-    }
-    options.push_back({"Write NDEF", [=]() { TagOMatic(TagOMatic::WRITE_NDEF_MODE); }});
-#endif
-#ifndef LITE_VERSION
-    options.push_back({"Amiibolink", [=]() { Amiibo(); }});
-#endif
-    options.push_back({"Chameleon", [=]() { Chameleon(); }});
-#ifndef LITE_VERSION
-    options.push_back({"PN532 BLE", [=]() { Pn532ble(); }});
-#if !defined(REMOVE_RFID_HW_INTERFACE) // Remove Hardware interface menu due to lack of external GPIO
-    options.push_back({"PN532 UART", [=]() { PN532KillerTools(); }});
-#endif
-#endif
-    options.push_back({"Config", [this]() { configMenu(); }});
-
-#if !defined(REMOVE_RFID_HW_INTERFACE)
-#ifndef LITE_VERSION
-    if (bruceConfigPins.rfidModule == PN532_I2C_MODULE) {
-        // Added SRIX Menu only if PN is set to i2c mode
-        options.insert(options.begin() + 0, {"SRIX Tool", [=]() { PN532_SRIX(); }});
-    }
-#endif
-#endif
 
     addOptionToMainMenu();
 
@@ -82,7 +37,7 @@ void RFIDMenu::optionsMenu() {
     loopOptions(options, MENU_TYPE_SUBMENU, txt.c_str());
 }
 
-void RFIDMenu::configMenu() {
+void RFIDMenuDue::configMenu() {
     options = {
 #if !defined(REMOVE_RFID_HW_INTERFACE)  // Remove Hardware interface menu due to lack of external GPIO
         {"RFID Module", setRFIDModuleMenu          },
@@ -94,7 +49,7 @@ void RFIDMenu::configMenu() {
     loopOptions(options, MENU_TYPE_SUBMENU, "RFID Config");
 }
 
-void RFIDMenu::drawIcon(float scale) {
+void RFIDMenuDue::drawIcon(float scale) {
     clearIconArea();
     int iconSize = scale * 70;
     int iconRadius = scale * 7;

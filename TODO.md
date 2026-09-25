@@ -6,5 +6,7 @@
   - Import vendor
   - Export vendor
 - Funzioni Microel
-  - Tutto
-- Aggiungere gestori
+  - Tempo di stampa che il PN532 viene inizializato
+  - Read. Set, Add, Calcolo chiavi
+- Aggiungere gestori (YBB, stoBene, Aqvagold)
+- Verificare gli import dei file in rfidDue

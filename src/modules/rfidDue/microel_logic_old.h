@@ -1,10 +1,10 @@
 // #ifndef MICROEL_H
 // #define MICROEL_H
 
-// #include "drivers/pn532/pn532.h"
-// #include "components/popup.h"
 // #include "components/menu.h"
 // #include "components/menu_touch.h"
+// #include "components/popup.h"
+// #include "drivers/pn532/pn532.h"
 
 // struct DumpMicroel {
 //     uint16_t numeroOperazione;

@@ -9,12 +9,12 @@
 #ifndef __MICROEL_H__
 #define __MICROEL_H__
 
-#include "PN532.h"
+#include "modules/rfid/PN532.h"
 #include <Arduino.h>
 
 class Microel {
 public:
-    enum Microel_State { IDLE_MODE, READ_TAG_MODE };
+    enum Microel_State { IDLE_MODE, READ_TAG_MODE, SET_CREDIT_MODE, ADD_CREDIT_MODE, CALCULATE_KEYS_MODE };
 
     Microel();
     ~Microel();
@@ -28,13 +28,12 @@ private:
     Microel_State current_state;
     bool _screen_drawn = false;
 
-    // RAM storage for 128 blocks (512 bytes)
-    uint8_t _dump[128 * 4];
-
     void display_banner();
     void select_state();
     void set_state(Microel_State state);
     void read_tag();
+    void set_credit_tag();
+    void add_credit_tag();
     void show_main_menu();
 };
 

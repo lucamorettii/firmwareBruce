@@ -16,6 +16,7 @@
 #include "menu_items/NRF24.h"
 #include "menu_items/OthersMenu.h"
 #include "menu_items/RFIDMenu.h"
+#include "menu_items/RFIDMenuDue.h"
 #include "menu_items/RFMenu.h"
 #include "menu_items/ScriptsMenu.h"
 #include "menu_items/WifiMenu.h"
@@ -32,6 +33,7 @@ public:
     NRF24Menu nrf24Menu;
     OthersMenu othersMenu;
     RFIDMenu rfidMenu;
+    RFIDMenuDue rfidMenuDue;
     RFMenu rfMenu;
     ScriptsMenu scriptsMenu;
     WifiMenu wifiMenu;
