@@ -45,13 +45,17 @@ static bool read_block(Arduino_PN532_SRIX *nfc, uint8_t rx[4], uint8_t blockNum)
     return true;
 }
 
-static void write_block(Arduino_PN532_SRIX *nfc, struct srix_t *target, uint8_t blockNum) {
+static bool write_block(Arduino_PN532_SRIX *nfc, struct srix_t *target, uint8_t blockNum) {
     while (true) {
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return false;
+        }
         nfc->SRIX_write_block(blockNum, target->eeprom[blockNum]);
         uint8_t check[4];
-        if (!read_block(nfc, check, blockNum)) return;
-        if (memcmp(target->eeprom[blockNum], check, 4) == 0) return;
-        if (!nfc_reselect(nfc)) return;
+        if (!read_block(nfc, check, blockNum)) return false;
+        if (memcmp(target->eeprom[blockNum], check, 4) == 0) return true;
+        if (!nfc_reselect(nfc)) return false;
     }
 }
 
@@ -526,12 +530,12 @@ void mikai_reset_key(struct mykey_t *key) {
 
 int mikai_write_modified_blocks(struct mykey_t *key, Arduino_PN532_SRIX *nfc) {
     if (srix_flag_get(&key->srix4k->srixFlag, 0x06)) {
-        write_block(nfc, key->srix4k, 0x06);
+        if (!write_block(nfc, key->srix4k, 0x06)) return -1;
         srix_flag_remove(&key->srix4k->srixFlag, 0x06);
     }
 
     for (uint8_t i = 0; i < SRIX4K_BLOCKS; i++) {
-        if (srix_flag_get(&key->srix4k->srixFlag, i)) write_block(nfc, key->srix4k, i);
+        if (srix_flag_get(&key->srix4k->srixFlag, i) && !write_block(nfc, key->srix4k, i)) return -1;
     }
 
     key->srix4k->srixFlag = srix_flag_init();

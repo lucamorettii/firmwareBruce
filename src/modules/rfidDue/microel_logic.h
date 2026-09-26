@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief
  * @version 0.1
- * @date 2026-09-24
+ * @date 2026-09-25
  */
 #ifndef MICROEL_LOGIC_H
 #define MICROEL_LOGIC_H
@@ -27,5 +27,7 @@ bool microel_read_tag(Blocco *settore, PN532 *nfc);
 String microel_get_current_credit(Blocco *settore);
 String microel_get_keys_string(Blocco *settore);
 String microel_get_info_string(Blocco *settore);
+bool microel_set_cents(Blocco *settore, uint16_t cents, uint8_t day, uint8_t month, uint8_t year);
+bool microel_write_modified_blocks(Blocco *settore, PN532 *nfc);
 
 #endif

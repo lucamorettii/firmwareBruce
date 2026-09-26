@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief
  * @version 0.1
- * @date 2026-09-24
+ * @date 2026-09-25
  */
 #include "microel.h"
 #include "core/bus_HAL.h"
@@ -58,6 +58,8 @@ void Microel::loop() {
             case ADD_CREDIT_MODE: add_credit_tag(); break;
             case CALCULATE_KEYS_MODE: calculate_keys_tag(); break;
         }
+
+        if (returnToMenu) break;
     }
 }
 
@@ -132,6 +134,7 @@ void Microel::read_tag() {
     padprintln("");
 
     if (!microel_read_tag(settore, nfc)) {
+        if (returnToMenu) return;
         displayError("Microel tag read failed!");
         delay(2000);
         set_state(READ_TAG_MODE);
@@ -157,7 +160,56 @@ void Microel::read_tag() {
     _screen_drawn = true;
 }
 
-void Microel::set_credit_tag() {}
+void Microel::set_credit_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Microel tag on the reader.");
+    padprintln("");
+
+    if (!microel_read_tag(settore, nfc)) {
+        if (returnToMenu) return;
+        displayError("Microel tag read failed!");
+        delay(2000);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    uint8_t day = 15, month = 7, year = 26;
+    String value = num_keyboard("", 5, "Credit in cents:");
+    if (value == "\x1B") { // User pressed ESC
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+    display_banner();
+    padprintln("Updating Microel tag...");
+    padprintln("");
+    long cents = value.toInt();
+    if (value.isEmpty() || cents < 200 || cents > 5000) {
+        displayError("Invalid credit!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    if (microel_set_cents(settore, (uint16_t)cents, day, month, year)) {
+        displayError("Impossible to set credit!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    if (microel_write_modified_blocks(settore, nfc)) {
+        displayError("Tag write failed!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    displaySuccess("Credit set successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
 
 void Microel::add_credit_tag() {}
 
@@ -172,9 +224,10 @@ void Microel::calculate_keys_tag() {
     padprintln("");
 
     if (!microel_read_tag(settore, nfc)) {
+        if (returnToMenu) return;
         displayError("Microel tag read failed!");
         delay(2000);
-        set_state(READ_TAG_MODE);
+        set_state(CALCULATE_KEYS_MODE);
         return;
     }
 

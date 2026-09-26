@@ -410,6 +410,16 @@ int PN532::read(int cardBaudRate) {
     return SUCCESS;
 }
 
+int PN532::readMifareBlock(byte block, byte *buffer) {
+    if (!nfc.startPassiveTargetIDDetection()) return TAG_NOT_PRESENT;
+    if (!nfc.readDetectedPassiveTargetID()) return FAILURE;
+    set_uid();
+    format_data();
+    if (authenticate_mifare_classic(block) != SUCCESS) return TAG_AUTH_ERROR;
+    if (!nfc.mifareclassic_ReadDataBlock(block, buffer)) return FAILURE;
+    return SUCCESS;
+}
+
 int PN532::clone() {
     if (!nfc.startPassiveTargetIDDetection()) return TAG_NOT_PRESENT;
     if (!nfc.readDetectedPassiveTargetID()) return FAILURE;

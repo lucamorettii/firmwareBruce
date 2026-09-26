@@ -46,6 +46,7 @@ public:
     // Operations
     /////////////////////////////////////////////////////////////////////////////////////
     int read(int cardBaudRate = PN532_MIFARE_ISO14443A);
+    int readMifareBlock(byte block, byte *buffer);
     int clone();
     int erase();
     int write(int cardBaudRate = PN532_MIFARE_ISO14443A);

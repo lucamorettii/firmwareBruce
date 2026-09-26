@@ -2,16 +2,22 @@
 #include "core/display.h"
 #include "core/settings.h"
 #include "core/utils.h"
+#include "modules/rfidDue/YBB.h"
+#include "modules/rfidDue/aqvagold.h"
 #include "modules/rfidDue/microel.h"
 #include "modules/rfidDue/mikai.h"
+#include "modules/rfidDue/stoBene.h"
 
 void RFIDMenuDue::optionsMenu() {
     options = {
 #if !defined(REMOVE_RFID_HW_INTERFACE)
 #ifndef LITE_VERSION
-        {"Mikai",   [=]() { startMikai(); }  },
-        {"Microel", [=]() { startMicroel(); }},
-        {"Config",  [=]() { configMenu(); }  },
+        {"Mikai",    [=]() { startMikai(); }   },
+        {"Microel",  [=]() { startMicroel(); } },
+        {"YBB",      [=]() { startYBB(); }     },
+        {"Sto&Bene", [=]() { startStoBene(); } },
+        {"Aqvagold", [=]() { startAqvaGold(); }},
+        {"Config",   [=]() { configMenu(); }   },
 #endif
 #endif
     };

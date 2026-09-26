@@ -3,9 +3,10 @@
  * @author Luca Moretti
  * @brief
  * @version 0.1
- * @date 2026-09-24
+ * @date 2026-09-25
  */
 #include "microel_logic.h"
+#include "core/mykeyboard.h"
 
 uint8_t uid[8];
 uint8_t uidLength;
@@ -13,6 +14,31 @@ uint8_t sumHex[6];
 uint8_t chiaveA[6];
 uint8_t chiaveB[6];
 Blocco settore[3]; // settore[0] = B4, settore[1] = B5, settore[2] = B6
+
+uint8_t calcolaChecksum(uint8_t dati[16]) {
+    uint16_t somma = 0x21;
+    for (int i = 0; i < 15; i++) somma += dati[i];
+    return (uint8_t)(somma % 256);
+}
+
+void microel_encode_block(const Blocco &blocco, uint8_t out[16]) {
+    out[0] = (uint8_t)(blocco.numeroOperazione & 0xFF);
+    out[1] = (uint8_t)(blocco.numeroOperazione >> 8);
+    out[2] = (uint8_t)(blocco.sommaTotaleCredito & 0xFF);
+    out[3] = (uint8_t)(blocco.sommaTotaleCredito >> 8);
+    out[4] = blocco.deposito;
+    out[5] = (uint8_t)(blocco.credito & 0xFF);
+    out[6] = (uint8_t)(blocco.credito >> 8);
+    out[7] = (uint8_t)(blocco.dataTransazione & 0xFF);
+    out[8] = (uint8_t)((blocco.dataTransazione >> 8) & 0xFF);
+    out[9] = (uint8_t)((blocco.dataTransazione >> 16) & 0xFF);
+    out[10] = (uint8_t)((blocco.dataTransazione >> 24) & 0xFF);
+    out[11] = (uint8_t)(blocco.puntiFedelta & 0xFF);
+    out[12] = (uint8_t)(blocco.puntiFedelta >> 8);
+    out[13] = (uint8_t)(blocco.importoUltimaOperazione & 0xFF);
+    out[14] = (uint8_t)(blocco.importoUltimaOperazione >> 8);
+    out[15] = calcolaChecksum(out);
+}
 
 void calcolaSumHex() {
     // Chiave XOR fissa del protocollo Microel
@@ -72,7 +98,18 @@ bool microel_read_tag(Blocco *settore, PN532 *nfc) {
     }
 
     uidLength = 0;
-    if (!nfc->nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 5000)) { return false; }
+    const uint32_t readStart = millis();
+    while (millis() - readStart < 5000) {
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return false;
+        }
+
+        if (nfc->nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 100)) break;
+        delay(10);
+    }
+
+    if (uidLength == 0) return false;
 
     if (uidLength == 0 || uidLength > sizeof(uid)) {
         uidLength = 0;
@@ -166,4 +203,39 @@ String microel_get_keys_string(Blocco *settore) {
 
     return "UID (" + String(uidLength) + " byte): " + uidString + "\nKey A: " + keyAString +
            "\nKey B: " + keyBString;
+}
+
+bool microel_set_cents(Blocco *settore, uint16_t cents, uint8_t day, uint8_t month, uint8_t year) {
+    if (settore == nullptr) return false;
+    if (cents < 200 || cents > 5000) return false;
+
+    settore[0].numeroOperazione = 51;
+    settore[0].sommaTotaleCredito = 2000 + cents;
+    settore[0].credito = cents;
+    settore[0].dataTransazione = (uint32_t)day | ((uint32_t)month << 8) | ((uint32_t)year << 16);
+    settore[0].importoUltimaOperazione = cents;
+
+    settore[1].numeroOperazione = 50;
+    settore[1].sommaTotaleCredito = 2000;
+    settore[1].credito = cents - 100;
+    settore[1].dataTransazione = (uint32_t)day | ((uint32_t)month << 8) | ((uint32_t)year << 16);
+    settore[1].importoUltimaOperazione = cents - 200;
+
+    settore[2] = settore[0];
+
+    return true;
+}
+
+bool microel_write_modified_blocks(Blocco *settore, PN532 *nfc) {
+    if (nfc == nullptr || settore == nullptr) return false;
+
+    uint8_t bloccoDati[16];
+    uint8_t blocchi[] = {4, 5, 6};
+
+    for (int i = 0; i < 3; i++) {
+        microel_encode_block(settore[i], bloccoDati);
+        if (!nfc->nfc.mifareclassic_WriteDataBlock(blocchi[i], bloccoDati)) return false;
+    }
+
+    return true;
 }

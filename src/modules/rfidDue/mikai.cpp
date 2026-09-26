@@ -212,6 +212,7 @@ void Mikai::set_credit_tag() {
     padprintln("");
 
     if (!mikai_read_tag(&srixKey, nfc)) {
+        if (returnToMenu) return;
         displayError("Mikai tag read failed!");
         delay(2000);
         set_state(SET_CREDIT_MODE);
@@ -244,6 +245,7 @@ void Mikai::set_credit_tag() {
     }
 
     if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        if (returnToMenu) return;
         displayError("Tag write failed!", true);
         set_state(SET_CREDIT_MODE);
         return;
@@ -266,6 +268,7 @@ void Mikai::add_credit_tag() {
     padprintln("");
 
     if (!mikai_read_tag(&srixKey, nfc)) {
+        if (returnToMenu) return;
         displayError("Mikai tag read failed!");
         delay(2000);
         set_state(ADD_CREDIT_MODE);
@@ -298,6 +301,7 @@ void Mikai::add_credit_tag() {
     }
 
     if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        if (returnToMenu) return;
         displayError("Tag write failed!", true);
         set_state(ADD_CREDIT_MODE);
         return;
