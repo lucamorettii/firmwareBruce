@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief Read, Write and Emulate RFID tags using PN532 module
  * @version 0.2
- * @date 2026-09-24
+ * @date 2026-09-26
  */
 #ifndef BRUCE_PN532_H
 #define BRUCE_PN532_H
@@ -47,6 +47,7 @@ public:
     /////////////////////////////////////////////////////////////////////////////////////
     int read(int cardBaudRate = PN532_MIFARE_ISO14443A);
     int readMifareBlock(byte block, byte *buffer);
+    int writeMifareBlock(byte block, byte *buffer);
     int clone();
     int erase();
     int write(int cardBaudRate = PN532_MIFARE_ISO14443A);

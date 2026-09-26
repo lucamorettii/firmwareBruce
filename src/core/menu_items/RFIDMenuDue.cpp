@@ -1,3 +1,10 @@
+/**
+ * @file RFIDMenuDue.cpp
+ * @author Luca Moretti
+ * @brief
+ * @version 0.1
+ * @date 2026-09-26
+ */
 #include "RFIDMenuDue.h"
 #include "core/display.h"
 #include "core/settings.h"
@@ -16,7 +23,7 @@ void RFIDMenuDue::optionsMenu() {
         {"Microel",  [=]() { startMicroel(); } },
         {"YBB",      [=]() { startYBB(); }     },
         {"Sto&Bene", [=]() { startStoBene(); } },
-        {"Aqvagold", [=]() { startAqvaGold(); }},
+        {"Aqvagold", [=]() { startAqvagold(); }},
         {"Config",   [=]() { configMenu(); }   },
 #endif
 #endif

@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief
  * @version 0.1
- * @date 2026-09-25
+ * @date 2026-09-26
  */
 #include "YBB.h"
 #include "core/bus_HAL.h"
@@ -59,6 +59,8 @@ void YBB::loop() {
             case SET_CREDIT_MODE: set_credit_tag(); break;
             case ADD_CREDIT_MODE: add_credit_tag(); break;
         }
+
+        if (returnToMenu) break;
     }
 }
 
@@ -129,7 +131,7 @@ void YBB::read_tag() {
     padprintln("Place a YBB tag on the reader.");
     padprintln("");
 
-    /* Lettura tag */
+    /* Aggiungo le chiavi Mifare */
     bruceConfig.ensureMifareKeysLoaded();
     if (setupSdCard()) {
         if (!SD.exists("/BruceRFID/YBB.keys")) {
@@ -152,18 +154,29 @@ void YBB::read_tag() {
         }
     }
 
+    /* Lettura tag */
     byte buffer[18];
-    while (true) {
+    bool readSuccess = false;
+    const uint32_t readStart = millis();
+    while (millis() - readStart < 5000) {
         if (check(EscPress)) {
             returnToMenu = true;
             break;
         }
-        if (nfc->readMifareBlock(YBB_BLOCCO_CREDITO, buffer) == 0) { break; } // 0 = SUCCESS
-        delay(200);
+
+        if (nfc->readMifareBlock(YBB_BLOCCO_CREDITO, buffer) == 0) {
+            readSuccess = true;
+            break;
+        }
+        delay(10);
     }
 
-    if (returnToMenu) {
-        _screen_drawn = true;
+    if (returnToMenu) { return; }
+
+    if (!readSuccess) {
+        displayError("YBB tag read failed!");
+        delay(2000);
+        set_state(READ_TAG_MODE);
         return;
     }
 
@@ -189,8 +202,133 @@ void YBB::read_tag() {
     _screen_drawn = true;
 }
 
-void YBB::set_credit_tag() {}
+void YBB::set_credit_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
 
-void YBB::add_credit_tag() {}
+    display_banner();
+    padprintln("Place a YBB tag on the reader.");
+    padprintln("");
+
+    bruceConfig.ensureMifareKeysLoaded();
+    byte buffer[18];
+    bool readSuccess = false;
+    const uint32_t readStart = millis();
+    while (millis() - readStart < 5000) {
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return;
+        }
+        if (nfc->readMifareBlock(YBB_BLOCCO_CREDITO, buffer) == 0) {
+            readSuccess = true;
+            break;
+        }
+        delay(10);
+    }
+
+    if (!readSuccess) {
+        displayError("YBB tag read failed!");
+        delay(2000);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    uint16_t currentCredit = (uint16_t)((buffer[1] << 8) | buffer[2]);
+    String value = num_keyboard("", 5, "Credit in cents (" + String(currentCredit) + "):");
+    if (value == "\x1B") {
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    long credit = value.toInt();
+    if (value.isEmpty() || credit < 5 || credit > 5000) {
+        displayError("Invalid credit!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    buffer[1] = (uint8_t)(credit >> 8);
+    buffer[2] = (uint8_t)credit;
+
+    display_banner();
+    padprintln("Updating YBB tag...");
+    padprintln("");
+    if (nfc->writeMifareBlock(YBB_BLOCCO_CREDITO, buffer) != 0) {
+        displayError("YBB tag write failed!", true);
+        set_state(SET_CREDIT_MODE);
+        return;
+    }
+
+    displaySuccess("Credit set successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
+
+void YBB::add_credit_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a YBB tag on the reader.");
+    padprintln("");
+
+    bruceConfig.ensureMifareKeysLoaded();
+    byte buffer[18];
+    bool readSuccess = false;
+    const uint32_t readStart = millis();
+    while (millis() - readStart < 5000) {
+        if (check(EscPress)) {
+            returnToMenu = true;
+            return;
+        }
+        if (nfc->readMifareBlock(YBB_BLOCCO_CREDITO, buffer) == 0) {
+            readSuccess = true;
+            break;
+        }
+        delay(10);
+    }
+
+    if (!readSuccess) {
+        displayError("YBB tag read failed!");
+        delay(2000);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    uint16_t currentCredit = (uint16_t)((buffer[1] << 8) | buffer[2]);
+    String value = num_keyboard("", 5, "Add cents (" + String(currentCredit) + "):");
+    if (value == "\x1B") {
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    long amount = value.toInt();
+    long newCredit = (long)currentCredit + amount;
+    if (value.isEmpty() || amount < 5 || newCredit > 5000) {
+        displayError("Invalid credit!", true);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    buffer[1] = (uint8_t)(newCredit >> 8);
+    buffer[2] = (uint8_t)newCredit;
+
+    display_banner();
+    padprintln("Updating YBB tag...");
+    padprintln("");
+    if (nfc->writeMifareBlock(YBB_BLOCCO_CREDITO, buffer) != 0) {
+        displayError("YBB tag write failed!", true);
+        set_state(ADD_CREDIT_MODE);
+        return;
+    }
+
+    displaySuccess("Credit added successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
 
 void startYBB() { YBB ybb_tool; }

@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief
  * @version 0.1
- * @date 2026-09-25
+ * @date 2026-09-26
  */
 #include "mikai.h"
 #include "core/bus_HAL.h"
@@ -222,7 +222,8 @@ void Mikai::set_credit_tag() {
     memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
 
     uint8_t day = 15, month = 7, year = 26;
-    String value = num_keyboard("", 5, "Credit in cents:");
+    uint16_t currentCredit = mikai_get_current_credit(&srixKey);
+    String value = num_keyboard("", 5, "Credit in cents (" + String(currentCredit) + "):");
     if (value == "\x1B") { // User pressed ESC
         set_state(SET_CREDIT_MODE);
         return;
@@ -278,7 +279,8 @@ void Mikai::add_credit_tag() {
     memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
 
     uint8_t day = 15, month = 7, year = 26;
-    String value = num_keyboard("", 5, "Add cents:");
+    uint16_t currentCredit = mikai_get_current_credit(&srixKey);
+    String value = num_keyboard("", 5, "Add cents (" + String(currentCredit) + "):");
     if (value == "\x1B") { // User pressed ESC
         set_state(ADD_CREDIT_MODE);
         return;

@@ -1,3 +1,10 @@
+/**
+ * @file RFIDMenuDue.h
+ * @author Luca Moretti
+ * @brief
+ * @version 0.1
+ * @date 2026-09-26
+ */
 #ifndef __RFID_MENU_DUE_H__
 #define __RFID_MENU_DUE_H__
 

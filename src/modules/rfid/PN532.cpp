@@ -3,7 +3,7 @@
  * @author Luca Moretti
  * @brief Read, Write and Emulate RFID tags using PN532 module
  * @version 0.3
- * @date 2026-09-24
+ * @date 2026-09-26
  */
 #include "PN532.h"
 #include "apdu.h"
@@ -418,6 +418,15 @@ int PN532::readMifareBlock(byte block, byte *buffer) {
     if (authenticate_mifare_classic(block) != SUCCESS) return TAG_AUTH_ERROR;
     if (!nfc.mifareclassic_ReadDataBlock(block, buffer)) return FAILURE;
     return SUCCESS;
+}
+
+int PN532::writeMifareBlock(byte block, byte *buffer) {
+    if (!nfc.startPassiveTargetIDDetection()) return TAG_NOT_PRESENT;
+    if (!nfc.readDetectedPassiveTargetID()) return FAILURE;
+    set_uid();
+    format_data();
+    if (authenticate_mifare_classic(block) != SUCCESS) return TAG_AUTH_ERROR;
+    return nfc.mifareclassic_WriteDataBlock(block, buffer) ? SUCCESS : FAILURE;
 }
 
 int PN532::clone() {
