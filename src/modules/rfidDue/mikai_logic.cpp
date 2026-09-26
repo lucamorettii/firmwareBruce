@@ -195,12 +195,12 @@ void mikai_get_info_string(struct mykey_t *key, char *out, size_t outLen) {
     if (!lockId) {
         if (!mikai_is_reset(key)) {
             uint16_t c = mikai_get_current_credit(key);
-            snprintf(tmp, sizeof(tmp), "Credito: %u.%02u euro\n", c / 100, c % 100);
+            snprintf(tmp, sizeof(tmp), "Credit: %u.%02u euro\n", c / 100, c % 100);
             strncat(out, tmp, outLen - strlen(out) - 1);
         }
         snprintf(tmp, sizeof(tmp), "SK: %08X\n", key->encryptionKey);
         strncat(out, tmp, outLen - strlen(out) - 1);
-        snprintf(tmp, sizeof(tmp), "Gestore associato: %s\n", !mikai_is_reset(key) ? "si" : "no");
+        snprintf(tmp, sizeof(tmp), "Associated vendor: %s\n", !mikai_is_reset(key) ? "si" : "no");
         strncat(out, tmp, outLen - strlen(out) - 1);
     }
 
@@ -209,10 +209,10 @@ void mikai_get_info_string(struct mykey_t *key, char *out, size_t outLen) {
     int yy = (key->srix4k->eeprom[0x08][3] & 0x0F) * 1000 +
              ((key->srix4k->eeprom[0x08][3] & 0xF0) >> 4) * 100 +
              ((key->srix4k->eeprom[0x08][2] & 0xF0) >> 4) * 10 + (key->srix4k->eeprom[0x08][2] & 0x0F);
-    snprintf(tmp, sizeof(tmp), "Data produzione: %02d/%02d/%04d\n", dd, mm, yy);
+    snprintf(tmp, sizeof(tmp), "Production date: %02d/%02d/%04d\n", dd, mm, yy);
     strncat(out, tmp, outLen - strlen(out) - 1);
 
-    strncat(out, "Transazioni:\n", outLen - strlen(out) - 1);
+    strncat(out, "Transactions:\n", outLen - strlen(out) - 1);
     uint8_t current = get_current_transaction_offset(key);
     for (uint8_t i = 0; i < 8; i++) {
         if (current == 7) current = 0;
@@ -220,7 +220,7 @@ void mikai_get_info_string(struct mykey_t *key, char *out, size_t outLen) {
 
         uint8_t *eb = key->srix4k->eeprom[0x34 + current];
         if (eb[0] == 0xFF && eb[1] == 0xFF && eb[2] == 0xFF && eb[3] == 0xFF) {
-            snprintf(tmp, sizeof(tmp), "[%u] Nessuna\n", i);
+            snprintf(tmp, sizeof(tmp), "[%u] None\n", i);
         } else {
             uint8_t td = eb[0] >> 3;
             uint8_t tm = ((eb[0] & 0x07) << 1) | ((eb[1] & 0x80) >> 7);

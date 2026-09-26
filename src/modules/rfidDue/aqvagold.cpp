@@ -131,7 +131,6 @@ void Aqvagold::read_tag() {
     padprintln("Place a Aqvagold tag on the reader.");
     padprintln("");
 
-    /* Aggiungo le chiavi Mifare */
     bruceConfig.ensureMifareKeysLoaded();
     if (setupSdCard()) {
         if (!SD.exists("/BruceRFID/Aqvagold.keys")) {
@@ -154,7 +153,6 @@ void Aqvagold::read_tag() {
         }
     }
 
-    /* Lettura tag */
     byte buffer[18];
     bool readSuccess = false;
     const uint32_t readStart = millis();
@@ -182,9 +180,8 @@ void Aqvagold::read_tag() {
 
     tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
 
-    /* Stampa UID, Tipo e Credito */
     padprintln("UID: " + nfc->printableUID.uid);
-    padprintln("Tipo: " + nfc->printableUID.picc_type);
+    padprintln("Type: " + nfc->printableUID.picc_type);
 
     uint16_t credit = (uint16_t)(buffer[0] | buffer[1] << 8);
     uint16_t euro = credit / 1000;
@@ -193,7 +190,7 @@ void Aqvagold::read_tag() {
     if (mill < 100) creditoStr += "0";
     if (mill < 10) creditoStr += "0";
     creditoStr += String(mill) + " euro";
-    padprintln("Credito: " + creditoStr);
+    padprintln("Credit: " + creditoStr);
     padprintln("");
 
     tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);

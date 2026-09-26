@@ -354,6 +354,41 @@ void Mikai::reset_tag() {
 
 void Mikai::import_vendor_tag() {}
 
-void Mikai::export_vendor_tag() {}
+void Mikai::export_vendor_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Place a Mikai tag on the reader.");
+    padprintln("");
+
+    if (!mikai_read_tag(&srixKey, nfc)) {
+        displayError("Mikai tag read failed!");
+        delay(2000);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
+
+    mikai_reset_key(&srixKey);
+    if (!mikai_has_pending_writes(&srixKey)) {
+        displayError("No changes to write!", true);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        displayError("Reset write failed!", true);
+        set_state(RESET_MODE);
+        return;
+    }
+
+    displaySuccess("Tag reset successfully!");
+    delay(1000);
+    set_state(IDLE_MODE);
+}
 
 void startMikai() { Mikai mikai_tool; }

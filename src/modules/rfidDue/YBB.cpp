@@ -131,7 +131,6 @@ void YBB::read_tag() {
     padprintln("Place a YBB tag on the reader.");
     padprintln("");
 
-    /* Aggiungo le chiavi Mifare */
     bruceConfig.ensureMifareKeysLoaded();
     if (setupSdCard()) {
         if (!SD.exists("/BruceRFID/YBB.keys")) {
@@ -154,7 +153,6 @@ void YBB::read_tag() {
         }
     }
 
-    /* Lettura tag */
     byte buffer[18];
     bool readSuccess = false;
     const uint32_t readStart = millis();
@@ -182,9 +180,8 @@ void YBB::read_tag() {
 
     tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
 
-    /* Stampa UID, Tipo e Credito */
     padprintln("UID: " + nfc->printableUID.uid);
-    padprintln("Tipo: " + nfc->printableUID.picc_type);
+    padprintln("Type: " + nfc->printableUID.picc_type);
 
     uint16_t credit = (uint16_t)((buffer[1] << 8) | buffer[2]);
     uint16_t euro = credit / 100;
@@ -192,7 +189,7 @@ void YBB::read_tag() {
     String creditoStr = String(euro) + ".";
     if (cent < 10) creditoStr += "0";
     creditoStr += String(cent) + " euro";
-    padprintln("Credito: " + creditoStr);
+    padprintln("Credit: " + creditoStr);
     padprintln("");
 
     tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);

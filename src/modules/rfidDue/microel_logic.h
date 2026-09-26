@@ -23,6 +23,7 @@ struct Blocco {
 
 extern Blocco settore[3]; // settore[0] = B4, settore[1] = B5, settore[2] = B6
 
+void microel_encode_block(const Blocco &blocco, uint8_t out[16]);
 bool microel_read_tag(Blocco *settore, PN532 *nfc);
 String microel_get_current_credit(Blocco *settore);
 String microel_get_keys_string(Blocco *settore);

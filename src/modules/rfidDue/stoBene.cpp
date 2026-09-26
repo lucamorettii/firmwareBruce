@@ -132,7 +132,6 @@ void StoBene::read_tag() {
     padprintln("Place a Sto&Bene tag on the reader.");
     padprintln("");
 
-    /* Aggiungo le chiavi Mifare */
     bruceConfig.ensureMifareKeysLoaded();
     if (setupSdCard()) {
         if (!SD.exists("/BruceRFID/StoBene.keys")) {
@@ -155,7 +154,6 @@ void StoBene::read_tag() {
         }
     }
 
-    /* Lettura tag */
     byte buffer[18];
     byte previousBuffer[18];
     bool readSuccess = false;
@@ -201,7 +199,6 @@ void StoBene::read_tag() {
 
     tft.setTextColor(bruceConfig.priColor, bruceConfig.bgColor);
 
-    /* Stampa UID, Tipo e Credito */
     padprintln("UID: " + nfc->printableUID.uid);
     padprintln("Tipo: " + nfc->printableUID.picc_type);
 
@@ -217,8 +214,8 @@ void StoBene::read_tag() {
     String previousCreditStr = String(euro) + ".";
     if (cent < 10) previousCreditStr += "0";
     previousCreditStr += String(cent) + " euro";
-    padprintln("Credito: " + creditoStr);
-    padprintln("Credito precedente: " + previousCreditStr);
+    padprintln("Credit: " + creditoStr);
+    padprintln("Previous credit: " + previousCreditStr);
     padprintln("");
 
     tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);

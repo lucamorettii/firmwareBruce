@@ -194,11 +194,27 @@ void Microel::set_credit_tag() {
         return;
     }
 
-    if (microel_set_cents(settore, (uint16_t)cents, day, month, year)) {
+    if (!microel_set_cents(settore, (uint16_t)cents, day, month, year)) {
         displayError("Impossible to set credit!", true);
         set_state(SET_CREDIT_MODE);
         return;
     }
+
+    // Debug: Stampo i tre blocchi modificati
+    uint8_t debugBuf[16];
+    for (int i = 0; i < 3; i++) {
+        microel_encode_block(settore[i], debugBuf);
+        Serial.print("Block ");
+        Serial.print(i);
+        Serial.print(": ");
+        for (int j = 0; j < 16; j++) {
+            if (debugBuf[j] < 0x10) Serial.print("0");
+            Serial.print(debugBuf[j], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+    }
+    // Debug: Stampo i tre blocchi modificati
 
     if (microel_write_modified_blocks(settore, nfc)) {
         displayError("Tag write failed!", true);

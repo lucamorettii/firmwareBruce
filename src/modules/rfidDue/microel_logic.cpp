@@ -41,41 +41,32 @@ void microel_encode_block(const Blocco &blocco, uint8_t out[16]) {
 }
 
 void calcolaSumHex() {
-    // Chiave XOR fissa del protocollo Microel
     const uint8_t xorKey[6] = {0x01, 0x92, 0xA7, 0x75, 0x2B, 0xF9};
 
-    // Somma i byte dell'UID e applica mod 256
     int somma = 0;
     for (size_t i = 0; i < uidLength; i++) somma += uid[i];
     int val = somma % 256;
 
-    // Il protocollo richiede un valore pari; se dispari incrementa di 2
     if (val % 2 == 1) val += 2;
 
-    // XOR con la chiave fissa per ottenere i 6 byte di sumHex
     for (size_t i = 0; i < 6; i++) sumHex[i] = (uint8_t)(val ^ xorKey[i]);
 }
 
 void generaChiaveA() {
     calcolaSumHex();
 
-    // Il nibble alto del primo byte determina il secondo XOR
     uint8_t primoNibble = (sumHex[0] >> 4) & 0x0F;
 
     if (primoNibble == 0x2 || primoNibble == 0x3 || primoNibble == 0xA || primoNibble == 0xB) {
-        // Variante 1: secondo XOR con 0x40
         for (size_t i = 0; i < 6; i++) chiaveA[i] = 0x40 ^ sumHex[i];
     } else if (primoNibble == 0x6 || primoNibble == 0x7 || primoNibble == 0xE || primoNibble == 0xF) {
-        // Variante 2: secondo XOR con 0xC0
         for (size_t i = 0; i < 6; i++) chiaveA[i] = 0xC0 ^ sumHex[i];
     } else {
-        // Variante 3: Key A coincide con sumHex (nessun XOR aggiuntivo)
         for (size_t i = 0; i < 6; i++) chiaveA[i] = sumHex[i];
     }
 }
 
 void generaChiaveB() {
-    // Key B = NOT bit a bit di Key A → chiaveA XOR chiaveB = 0xFF×6
     for (size_t i = 0; i < 6; i++) chiaveB[i] = 0xFF ^ chiaveA[i];
 }
 
@@ -171,8 +162,8 @@ String microel_get_info_string(Blocco *settore) {
     keyBString.toUpperCase();
 
     return "UID (" + String(uidLength) + " byte): " + uidString + "\nKey A: " + keyAString +
-           "\nKey B: " + keyBString + "\nCredito corrente: " + microel_get_current_credit(settore) +
-           "\nCredito precedente: " + String(settore[1].credito / 100) + "." +
+           "\nKey B: " + keyBString + "\nCurrent credit: " + microel_get_current_credit(settore) +
+           "\nPrevious credit: " + String(settore[1].credito / 100) + "." +
            (settore[1].credito % 100 < 10 ? "0" : "") + String(settore[1].credito % 100) + " euro";
 }
 
