@@ -352,7 +352,118 @@ void Mikai::reset_tag() {
     set_state(IDLE_MODE);
 }
 
-void Mikai::import_vendor_tag() {}
+void Mikai::import_vendor_tag() {
+    if (_screen_drawn) {
+        delay(50);
+        return;
+    }
+
+    display_banner();
+    padprintln("Select a vendor file from SD.");
+    padprintln("");
+
+    if (!setupSdCard()) {
+        displayError("SD card not mounted!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    if (!SD.exists("/BruceRFID/Vendor")) {
+        displayError("No vendor folder!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    File root = SD.open("/BruceRFID/Vendor");
+    if (!root) {
+        displayError("Failed to open vendor folder!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    String fileNames[64];
+    int fileCount = 0;
+    File file = root.openNextFile();
+    while (file && fileCount < 64) {
+        if (!file.isDirectory()) {
+            String fname = String(file.name());
+            if (fname.endsWith(".bin")) { fileNames[fileCount++] = fname; }
+        }
+        file = root.openNextFile();
+    }
+    root.close();
+
+    if (fileCount == 0) {
+        displayError("No .bin files found!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    options = {};
+    for (int i = 0; i < fileCount; i++) {
+        options.emplace_back(fileNames[i], []() {});
+    }
+
+    int chosen = loopOptions(options);
+    if (chosen < 0) {
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    String selectedFile = fileNames[chosen];
+    String filepath = "/BruceRFID/Vendor/" + selectedFile;
+
+    File binFile = SD.open(filepath.c_str(), FILE_READ);
+    if (!binFile) {
+        displayError("Failed to open file!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    uint8_t vendorData[8];
+    if (binFile.read(vendorData, sizeof(vendorData)) != sizeof(vendorData)) {
+        binFile.close();
+        displayError("Failed to read file!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+    binFile.close();
+
+    padprintln("Place a Mikai tag on the reader.");
+    padprintln("");
+
+    if (!mikai_read_tag(&srixKey, nfc)) {
+        if (returnToMenu) return;
+        displayError("Mikai tag read failed!");
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    uint8_t block18[4], block19[4];
+    memcpy(block18, vendorData, 4);
+    memcpy(block19, vendorData + 4, 4);
+
+    mikai_import_vendor(&srixKey, block18, block19);
+
+    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
+        if (returnToMenu) return;
+        displayError("Tag write failed!", true);
+        delay(2000);
+        set_state(IMPORT_VENDOR_MODE);
+        return;
+    }
+
+    displaySuccess("Vendor imported: " + filepath);
+    delay(2000);
+    set_state(IDLE_MODE);
+}
 
 void Mikai::export_vendor_tag() {
     if (_screen_drawn) {
@@ -365,29 +476,76 @@ void Mikai::export_vendor_tag() {
     padprintln("");
 
     if (!mikai_read_tag(&srixKey, nfc)) {
+        if (returnToMenu) return;
         displayError("Mikai tag read failed!");
         delay(2000);
-        set_state(RESET_MODE);
+        set_state(EXPORT_VENDOR_MODE);
         return;
     }
 
-    memcpy(_dump, srixKey.srix4k->eeprom, sizeof(_dump));
-
-    mikai_reset_key(&srixKey);
-    if (!mikai_has_pending_writes(&srixKey)) {
-        displayError("No changes to write!", true);
-        set_state(RESET_MODE);
+    uint8_t vendorData[8];
+    int result = mikai_export_vendor(&srixKey, vendorData);
+    if (result < 0) {
+        displayError("No vendor data on tag!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
         return;
     }
 
-    if (mikai_write_modified_blocks(&srixKey, nfc) != 0) {
-        displayError("Reset write failed!", true);
-        set_state(RESET_MODE);
+    String name = keyboard("", 32, "Enter vendor name:");
+    if (name == "\x1B") {
+        set_state(EXPORT_VENDOR_MODE);
         return;
     }
 
-    displaySuccess("Tag reset successfully!");
-    delay(1000);
+    if (name.isEmpty()) {
+        displayError("Name cannot be empty!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+
+    if (!setupSdCard()) {
+        displayError("SD card not mounted!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+
+    if (!SD.exists("/BruceRFID") && !SD.mkdir("/BruceRFID")) {
+        displayError("Failed to create folder!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+
+    if (!SD.exists("/BruceRFID/Vendor") && !SD.mkdir("/BruceRFID/Vendor")) {
+        displayError("Failed to create folder!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+
+    String filepath = "/BruceRFID/Vendor/" + name + ".bin";
+    File file = SD.open(filepath.c_str(), FILE_WRITE);
+    if (!file) {
+        displayError("Failed to create file!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+
+    if (file.write(vendorData, sizeof(vendorData)) != sizeof(vendorData)) {
+        file.close();
+        displayError("Failed to write file!", true);
+        delay(2000);
+        set_state(EXPORT_VENDOR_MODE);
+        return;
+    }
+    file.close();
+
+    displaySuccess("Vendor exported: " + filepath);
+    delay(2000);
     set_state(IDLE_MODE);
 }
 

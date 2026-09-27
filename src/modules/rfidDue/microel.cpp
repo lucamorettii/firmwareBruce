@@ -178,7 +178,6 @@ void Microel::set_credit_tag() {
         return;
     }
 
-    uint8_t day = 15, month = 7, year = 26;
     String value = num_keyboard("", 5, "Credit in cents:");
     if (value == "\x1B") { // User pressed ESC
         set_state(SET_CREDIT_MODE);
@@ -194,7 +193,7 @@ void Microel::set_credit_tag() {
         return;
     }
 
-    if (!microel_set_cents(settore, (uint16_t)cents, day, month, year)) {
+    if (!microel_set_cents(settore, (uint16_t)cents)) {
         displayError("Impossible to set credit!", true);
         set_state(SET_CREDIT_MODE);
         return;

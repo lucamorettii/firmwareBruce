@@ -196,20 +196,39 @@ String microel_get_keys_string(Blocco *settore) {
            "\nKey B: " + keyBString;
 }
 
-bool microel_set_cents(Blocco *settore, uint16_t cents, uint8_t day, uint8_t month, uint8_t year) {
+// out[0] = (uint8_t)(blocco.numeroOperazione & 0xFF);
+// out[1] = (uint8_t)(blocco.numeroOperazione >> 8);
+// out[2] = (uint8_t)(blocco.sommaTotaleCredito & 0xFF);
+// out[3] = (uint8_t)(blocco.sommaTotaleCredito >> 8);
+// out[4] = blocco.deposito;
+// out[5] = (uint8_t)(blocco.credito & 0xFF);
+// out[6] = (uint8_t)(blocco.credito >> 8);
+// out[7] = (uint8_t)(blocco.dataTransazione & 0xFF);
+// out[8] = (uint8_t)((blocco.dataTransazione >> 8) & 0xFF);
+// out[9] = (uint8_t)((blocco.dataTransazione >> 16) & 0xFF);
+// out[10] = (uint8_t)((blocco.dataTransazione >> 24) & 0xFF);
+// out[11] = (uint8_t)(blocco.puntiFedelta & 0xFF);
+// out[12] = (uint8_t)(blocco.puntiFedelta >> 8);
+// out[13] = (uint8_t)(blocco.importoUltimaOperazione & 0xFF);
+// out[14] = (uint8_t)(blocco.importoUltimaOperazione >> 8);
+// out[15] = calcolaChecksum(out);
+
+bool microel_set_cents(Blocco *settore, uint16_t cents) {
     if (settore == nullptr) return false;
     if (cents < 200 || cents > 5000) return false;
+
+    const uint32_t data = 0xD25E501A;
 
     settore[0].numeroOperazione = 51;
     settore[0].sommaTotaleCredito = 2000 + cents;
     settore[0].credito = cents;
-    settore[0].dataTransazione = (uint32_t)day | ((uint32_t)month << 8) | ((uint32_t)year << 16);
+    settore[0].dataTransazione = data;
     settore[0].importoUltimaOperazione = cents;
 
     settore[1].numeroOperazione = 50;
     settore[1].sommaTotaleCredito = 2000;
     settore[1].credito = cents - 100;
-    settore[1].dataTransazione = (uint32_t)day | ((uint32_t)month << 8) | ((uint32_t)year << 16);
+    settore[1].dataTransazione = data;
     settore[1].importoUltimaOperazione = cents - 200;
 
     settore[2] = settore[0];

@@ -1,7 +1,6 @@
 - Funzioni Mikai
   - Reset (aggiungere possibilità di uscita in lettura e scrittura, fare test)
-  - Import vendor
-  - Export vendor
+  - Import vendor (da sistemare)
 
 - Funzioni Microel
   - Set (da testare e mettere nella tastiera il credito corrente) e Add
