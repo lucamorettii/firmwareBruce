@@ -240,7 +240,7 @@ void YBB::set_credit_tag() {
     }
 
     long credit = value.toInt();
-    if (value.isEmpty() || credit < 5 || credit > 5000) {
+    if (value.isEmpty() || credit < 10 || credit > 2000) {
         displayError("Invalid credit!", true);
         set_state(SET_CREDIT_MODE);
         return;
@@ -305,7 +305,7 @@ void YBB::add_credit_tag() {
 
     long amount = value.toInt();
     long newCredit = (long)currentCredit + amount;
-    if (value.isEmpty() || amount < 5 || newCredit > 5000) {
+    if (value.isEmpty() || amount < 10 || newCredit < 10 || newCredit > 2000) {
         displayError("Invalid credit!", true);
         set_state(ADD_CREDIT_MODE);
         return;

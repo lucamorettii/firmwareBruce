@@ -14,6 +14,16 @@
 
 #define AQVAGOLD_BLOCCO_CREDITO 12
 
+String formatCreditEuro(uint16_t credit) {
+    uint16_t euro = credit / 1000;
+    uint16_t mill = credit % 1000;
+    String creditoStr = String(euro) + ".";
+    if (mill < 100) creditoStr += "0";
+    if (mill < 10) creditoStr += "0";
+    creditoStr += String(mill) + " euro";
+    return creditoStr;
+}
+
 Aqvagold::Aqvagold() {
     current_state = IDLE_MODE;
     setup();
@@ -184,13 +194,7 @@ void Aqvagold::read_tag() {
     padprintln("Type: " + nfc->printableUID.picc_type);
 
     uint16_t credit = (uint16_t)(buffer[0] | buffer[1] << 8);
-    uint16_t euro = credit / 1000;
-    uint16_t mill = credit % 1000;
-    String creditoStr = String(euro) + ".";
-    if (mill < 100) creditoStr += "0";
-    if (mill < 10) creditoStr += "0";
-    creditoStr += String(mill) + " euro";
-    padprintln("Credit: " + creditoStr);
+    padprintln("Credit: " + formatCreditEuro(credit));
     padprintln("");
 
     tft.setTextColor(getColorVariation(bruceConfig.priColor), bruceConfig.bgColor);
@@ -233,24 +237,32 @@ void Aqvagold::set_credit_tag() {
         return;
     }
 
-    uint16_t storedCredit = (uint16_t)buffer[0] | ((uint16_t)buffer[1] << 8);
-    uint16_t currentCredit = storedCredit / 10;
-    String value = num_keyboard("", 5, "Credit in cents (" + String(currentCredit) + "):");
+    uint16_t currentCredit = (uint16_t)buffer[0] | ((uint16_t)buffer[1] << 8);
+    String value = num_keyboard("", 5, "Credit in cents (" + formatCreditEuro(currentCredit) + "):");
     if (value == "\x1B") {
         set_state(SET_CREDIT_MODE);
         return;
     }
 
     long credit = value.toInt();
-    if (value.isEmpty() || credit < 100 || credit > 1000) {
+    if (value.isEmpty() || credit < 100 || credit > 10000) { // Da 0.10 cent a 10 euro
         displayError("Invalid credit!", true);
         set_state(SET_CREDIT_MODE);
         return;
     }
 
-    long storedCreditValue = credit * 10;
-    buffer[0] = (uint8_t)storedCreditValue;
-    buffer[1] = (uint8_t)(storedCreditValue >> 8);
+    buffer[0] = (uint8_t)credit;
+    buffer[1] = (uint8_t)(credit >> 8);
+
+    // Controllo di integrità
+    uint32_t complemento32bit = ~((uint32_t)credit) & 0xFFFFFFFF;
+    buffer[4] = (uint8_t)(complemento32bit & 0xFF);
+    buffer[5] = (uint8_t)((complemento32bit >> 8) & 0xFF);
+    buffer[6] = (uint8_t)((complemento32bit >> 16) & 0xFF);
+    buffer[7] = (uint8_t)((complemento32bit >> 24) & 0xFF);
+
+    buffer[8] = (uint8_t)credit;
+    buffer[9] = (uint8_t)(credit >> 8);
 
     display_banner();
     padprintln("Updating Aqvagold tag...");
@@ -299,9 +311,8 @@ void Aqvagold::add_credit_tag() {
         return;
     }
 
-    uint16_t storedCredit = (uint16_t)buffer[0] | ((uint16_t)buffer[1] << 8);
-    uint16_t currentCredit = storedCredit / 10;
-    String value = num_keyboard("", 5, "Add cents (" + String(currentCredit) + "):");
+    uint16_t currentCredit = (uint16_t)buffer[0] | ((uint16_t)buffer[1] << 8);
+    String value = num_keyboard("", 5, "Add cents (" + formatCreditEuro(currentCredit) + "):");
     if (value == "\x1B") {
         set_state(ADD_CREDIT_MODE);
         return;
@@ -309,15 +320,24 @@ void Aqvagold::add_credit_tag() {
 
     long amount = value.toInt();
     long newCredit = (long)currentCredit + amount;
-    if (value.isEmpty() || amount < 100 || newCredit > 1000) {
+    if (value.isEmpty() || amount < 100 || newCredit < 100 || newCredit > 10000) {
         displayError("Invalid credit!", true);
         set_state(ADD_CREDIT_MODE);
         return;
     }
 
-    long storedCreditValue = newCredit * 10;
-    buffer[0] = (uint8_t)storedCreditValue;
-    buffer[1] = (uint8_t)(storedCreditValue >> 8);
+    buffer[0] = (uint8_t)newCredit;
+    buffer[1] = (uint8_t)(newCredit >> 8);
+
+    // Controllo di integrità
+    uint32_t complemento32bit = ~((uint32_t)newCredit) & 0xFFFFFFFF;
+    buffer[4] = (uint8_t)(complemento32bit & 0xFF);
+    buffer[5] = (uint8_t)((complemento32bit >> 8) & 0xFF);
+    buffer[6] = (uint8_t)((complemento32bit >> 16) & 0xFF);
+    buffer[7] = (uint8_t)((complemento32bit >> 24) & 0xFF);
+
+    buffer[8] = (uint8_t)newCredit;
+    buffer[9] = (uint8_t)(newCredit >> 8);
 
     display_banner();
     padprintln("Updating Aqvagold tag...");

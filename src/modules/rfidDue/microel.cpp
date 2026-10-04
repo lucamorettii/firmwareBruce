@@ -183,6 +183,7 @@ void Microel::set_credit_tag() {
         set_state(SET_CREDIT_MODE);
         return;
     }
+
     display_banner();
     padprintln("Updating Microel tag...");
     padprintln("");

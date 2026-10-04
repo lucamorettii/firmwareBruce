@@ -5,7 +5,6 @@
  * @version 0.1
  * @date 2026-09-26
  */
-
 #ifndef __AQVAGOLD_H__
 #define __AQVAGOLD_H__
 
