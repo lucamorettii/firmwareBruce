@@ -148,7 +148,8 @@ void Microel::read_tag() {
     while (inizio < info.length()) {
         int fine = info.indexOf('\n', inizio);
         if (fine < 0) fine = info.length();
-        padprintln(info.substring(inizio, fine));
+        String riga = info.substring(inizio, fine);
+        padprintln(riga);
         inizio = fine + 1;
     }
     padprintln("");
@@ -216,7 +217,7 @@ void Microel::set_credit_tag() {
     }
     // Debug: Stampo i tre blocchi modificati
 
-    if (microel_write_modified_blocks(settore, nfc)) {
+    if (!microel_write_modified_blocks(settore, nfc)) {
         displayError("Tag write failed!", true);
         set_state(SET_CREDIT_MODE);
         return;
